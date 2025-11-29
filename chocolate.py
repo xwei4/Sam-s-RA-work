@@ -9,7 +9,7 @@ try:
     y = m.addVar(vtype=GRB.BINARY, name="y")
 
     # Objective
-    m.setObjective(-2000*x - 3000*y, GRB.MINIMIZE)
+    m.setObjective(2000*x + 3000*y, GRB.MAXIMIZE)
 
     # Constraints
     m.addConstr(0.5 * x + 0.2 * y <= 2, name="c0")
@@ -19,6 +19,12 @@ try:
 
     # Optimize
     m.optimize()
+
+    print("Optimal solution:")
+    print(f"x = {x.X}")
+    print(f"y = {y.X}")
+    print(f"Objective value = {m.ObjVal}")  
+
 except gp.GurobiError as e:
     print(f"Error code {e.errno}: {e}")
 
