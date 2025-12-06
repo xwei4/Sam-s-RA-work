@@ -48,16 +48,40 @@ for p, thetaL, thetaH in grid:
 
     if m.status == GRB.OPTIMAL:
         obj = m.objVal
-    else:
-        obj = None
 
-    results.append({
-        "p": p,
-        "thetaL": thetaL,
-        "thetaH": thetaH,
-        "obj": obj,
-        "status": m.status,
-    })
+        results.append({
+            "p": p,
+            "thetaL": thetaL,
+            "thetaH": thetaH,
+            "obj": obj,
+            "status": m.status,
+            "qH_star": qH_star.X,
+            "qL_star": qL_star.X,
+            "qHc": qHc.X,
+            "vqH_star": vqH_star.X,
+            "vqL_star": vqL_star.X,
+            "vqHc": vqHc.X,
+            "z": z.X,
+        })
+    else:
+        results.append({
+            "p": p,
+            "thetaL": thetaL,
+            "thetaH": thetaH,
+            "obj": None,
+            "status": m.status,
+        })
+
+        results.append({
+            "p": p,
+            "thetaL": thetaL,
+            "thetaH": thetaH,
+            "obj": obj,
+            "status": m.status,
+        })
 
 best = max(results, key=lambda r: r["obj"] if r["obj"] is not None else -1e100)
-print("Best:", best, results)
+
+print("Best result:")
+for k, v in best.items():
+    print(f"{k}: {v}")
