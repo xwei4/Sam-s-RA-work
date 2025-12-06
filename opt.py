@@ -60,4 +60,4 @@ for p, thetaL, thetaH in grid:
     })
 
 best = max(results, key=lambda r: r["obj"] if r["obj"] is not None else -1e100)
-print("Best:", best)
+print("Best:", best, results)
