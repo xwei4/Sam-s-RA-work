@@ -2,12 +2,11 @@ import gurobipy as gp
 from gurobipy import GRB
 import numpy as np
 
-p_vals = np.linspace(0.01, 0.99, 10)
-theta_vals = np.linspace(0.01, 0.99, 10)
+p_vals = np.linspace(0.01, 0.99, 9)
+theta_vals = np.linspace(0, 10, 10)
 
 grid = []
 
-grid = []
 for p in p_vals:
     for i, thetaL in enumerate(theta_vals[:-1]):
         for thetaH in theta_vals[i+1:]:
@@ -22,20 +21,20 @@ for p, thetaL, thetaH in grid:
     m = gp.Model()
     m.setParam('OutputFlag', False)
 
-    qH_star = m.addVar(lb=0.0, ub=1.0, name="qH*")
-    qL_star = m.addVar(lb=0.0, ub=1.0, name="qL*")
-    qHc = m.addVar(lb=0.0, ub=1.0, name="qHc")
-    vqH_star = m.addVar(name="vqH*")
-    vqL_star = m.addVar(name="vqL*")
-    vqHc = m.addVar(name="vqHc")
+    qH_star = m.addVar(lb=0.0, name="qH*")
+    qL_star = m.addVar(lb=0.0, name="qL*")
+    qHc = m.addVar(lb=0.0, name="qHc")
+    vqH_star = m.addVar(lb=0.0, name="vqH*")
+    vqL_star = m.addVar(lb=0.0, name="vqL*")
+    vqHc = m.addVar(lb=0.0, name="vqHc")
     z = m.addVar()
 
     m.Params.NonConvex = 2
 
-    m.addConstr(p*(vqL_star - thetaL*qL_star - (thetaH - thetaL)*qHc) + (1 - 
-    p)*(vqHc - thetaH * qHc) == 1, name="c1")
-    m.addConstr(qH_star - qHc >= eps,   "order1")
-    m.addConstr(qL_star - qH_star >= eps, "order2")
+    m.addConstr(p*(vqL_star - thetaL*qL_star - (thetaH - thetaL)*qHc) + (1 - p)*(vqHc - thetaH * qHc) == 1, name="sep")
+    #m.addConstr(p*(vqL_star - thetaL*qL_star)== 1, name="firing")
+    m.addConstr(qH_star - qHc >= eps, "c0")
+    m.addConstr(qL_star - qH_star >= eps, "c1")
     m.addConstr(z >= p*(vqL_star - thetaL*qL_star), name="c2")
     m.addConstr(z >= vqH_star - thetaH*qH_star, name="c3")
     m.addConstr(vqHc >= ((p*(thetaH - thetaL)+thetaH*(1-p))/(1-p))*qHc, name="c4")
