@@ -4,60 +4,50 @@ from gurobipy import GRB
 
 
 def solve_model(p, thetaL, thetaH, eps=1e-6):
-        m = gp.Model()
-        m.Params.OutputFlag = 0
-        m.Params.NonConvex = 2
-        m.Params.FeasibilityTol = 1e-8
+    m = gp.Model()
+    m.setParam('OutputFlag', False)
 
-        qH_star = m.addVar(lb=0.0)
-        qL_star = m.addVar(lb=0.0)
-        qHc = m.addVar(lb=0.0)
+    qHc     = m.addVar(lb=eps, name="qhc")
+    qHStar  = m.addVar(lb=eps, name="qHstar")
+    qLStar  = m.addVar(lb=eps, name="qLstar")
+    VqHc    = m.addVar(lb=0, name="Vqhc")
+    VqHStar = m.addVar(lb=0, name="VqHstar")
+    VqLStar = m.addVar(lb=0, name="VqLStar")
+    z       = m.addVar(lb=0, ub=1, name="dynamic_valuation")
 
-        vqH_star = m.addVar(lb=0.0)
-        vqL_star = m.addVar(lb=0.0)
-        vqHc = m.addVar(lb=0.0)
+    m.Params.NonConvex = 2
 
-        z = m.addVar(lb=-1e6)
+    m.addConstr(p*(VqLStar - thetaL*qLStar - (thetaH - thetaL)*qHc) + (1 - p)*(VqHc - thetaH * qHc) == 1, name="sep")
+    #m.addConstr(p*(vqL_star - thetaL*qL_star)== 1, name="firing")
+    m.addConstr(qHStar - qHc >= eps, "c0")
+    m.addConstr(qLStar - qHStar >= eps, "c1")
+    m.addConstr(z >= p*(VqLStar - thetaL*qLStar), name="c2")
+    m.addConstr(z >= VqHStar - thetaH*qHStar, name="c3")
+    m.addConstr(VqHc >= ((p*(thetaH - thetaL)+thetaH*(1-p))/(1-p))*qHc, name="c4")
+    m.addConstr(VqHStar - VqHc <= ((p*(thetaH - thetaL)+thetaH*(1-p))/(1-p)) * qHc * (qHStar - qHc),name="c5")
+    m.addConstr(VqHStar - VqHc >= thetaH * (qHStar - qHc),name="c6")
+    m.addConstr(VqLStar - VqHStar <= thetaH * (qLStar - qHStar),name="c7")
+    m.addConstr(VqLStar - VqHStar >= thetaL * (qLStar - qHStar),name="c8")
+    m.setObjective(z,GRB.MINIMIZE)
+    m.optimize()
 
-        slope = (p*(thetaH - thetaL) + thetaH*(1-p)) / (1-p)
 
-        m.addConstr(p*(vqL_star - thetaL*qL_star - (thetaH-thetaL)*qHc)+ (1-p)*(vqHc - thetaH*qHc) == 1)
-        #m.addConstr(p*(vqL_star - thetaL*qL_star)== 1)
+    if m.status != GRB.OPTIMAL:
+        return None
 
-        m.addConstr(qH_star - qHc >= eps)
-        m.addConstr(qL_star - qH_star >= eps)
-
-        m.addConstr(z >= p*(vqL_star - thetaL*qL_star))
-        m.addConstr(z >= vqH_star - thetaH*qH_star)
-
-        m.addConstr(vqHc >= slope*qHc)
-
-        m.addConstr(vqH_star - vqHc <= slope*(qH_star - qHc))
-        m.addConstr(vqH_star - vqHc >= thetaH*(qH_star - qHc))
-
-        m.addConstr(vqL_star - vqH_star <= thetaH*(qL_star - qH_star))
-        m.addConstr(vqL_star - vqH_star >= thetaL*(qL_star - qH_star))
-
-        m.setObjective(z, GRB.MINIMIZE)
-
-        m.optimize()
-
-        if m.status == GRB.OPTIMAL:
-            return {
-                "p": p,
-                "thetaL": thetaL,
-                "thetaH": thetaH,
-                "qH_star": qH_star.X,
-                "qL_star": qL_star.X,
-                "qHc": qHc.X,
-                "vqH_star": vqH_star.X,
-                "vqL_star": vqL_star.X,
-                "vqHc": vqHc.X,
-                "slope": slope,
-                "objective_z": m.objVal
-        }
-        else:
-            return None
+    return {
+        "p": p,
+        "thetaL": thetaL,
+        "thetaH": thetaH,
+        "qHc": qHc.X,
+        "qHStar": qHStar.X,
+        "qLStar": qLStar.X,
+        "VqHc": VqHc.X,
+        "VqHStar": VqHStar.X,
+        "VqLStar": VqLStar.X,
+        "z": z.X,
+        "objective_z": m.objVal,
+    }
 
 def search():
 
