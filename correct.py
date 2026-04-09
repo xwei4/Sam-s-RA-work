@@ -3,12 +3,15 @@ import gurobipy as gp
 from gurobipy import GRB
 
 
-def solve_model(p, thetaL, thetaH, eps=1e-5, time_limit=1.0):
+def solve_model(p, thetaL, thetaH, eps=1e-6, time_limit=30):
     deltaTheta = thetaH - thetaL
 
     m = gp.Model()
     m.Params.OutputFlag = 0
     m.Params.NonConvex = 2
+
+    m.Params.FeasibilityTol = 1e-9
+    m.Params.OptimalityTol = 1e-9
 
     m.Params.TimeLimit = time_limit
 
@@ -22,6 +25,12 @@ def solve_model(p, thetaL, thetaH, eps=1e-5, time_limit=1.0):
 
     z = m.addVar(lb=0, ub=1, name="dynamic_valuation")
 
+    dH = m.addVar(lb=eps, name="dH")
+    dL = m.addVar(lb=eps, name="dL")
+
+    m.addConstr(dH == qHStar - qHc)
+    m.addConstr(dL == qLStar - qHStar)
+
     m.addConstr(qHStar >= qHc + eps)
     m.addConstr(qLStar >= qHStar + eps)
 
@@ -31,10 +40,12 @@ def solve_model(p, thetaL, thetaH, eps=1e-5, time_limit=1.0):
     S = (p * deltaTheta) / (1 - p) + thetaH
 
     m.addConstr(VqHc >= S * qHc)
-    m.addConstr(VqHStar - VqHc <= S * qHc * (qHStar - qHc))
-    m.addConstr(VqHStar - VqHc >= thetaH * (qHStar - qHc))
-    m.addConstr(VqLStar - VqHStar <= thetaH * (qLStar - qHStar))
-    m.addConstr(VqLStar - VqHStar >= thetaL * (qLStar - qHStar))
+
+    m.addConstr(VqHStar - VqHc <= S * qHc * dH)
+    m.addConstr(VqHStar - VqHc >= thetaH * dH)
+
+    m.addConstr(VqLStar - VqHStar <= thetaH * dL)
+    m.addConstr(VqLStar - VqHStar >= thetaL * dL)
 
     m.addConstr(z >= VqHStar - thetaH * qHStar)
     m.addConstr(z >= p * (VqLStar - thetaL * qLStar))
@@ -49,10 +60,10 @@ def solve_model(p, thetaL, thetaH, eps=1e-5, time_limit=1.0):
 
     m.optimize()
 
-    if m.status not in [GRB.OPTIMAL, GRB.TIME_LIMIT]:
+    if m.status != GRB.OPTIMAL:
         return None
 
-    return {
+    result = {
         "p": p,
         "thetaL": thetaL,
         "thetaH": thetaH,
@@ -65,6 +76,9 @@ def solve_model(p, thetaL, thetaH, eps=1e-5, time_limit=1.0):
         "z": z.X,
         "objective_z": m.objVal,
     }
+
+
+    return result
 
 
 def search():
