@@ -116,7 +116,6 @@ def search():
                     if thetaL >= thetaH:
                         continue
 
-                    # ✅ optional pruning (cheap heuristic)
                     if thetaH < 0.5:
                         continue
 
