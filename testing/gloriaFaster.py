@@ -30,7 +30,7 @@ def solve_model(p, thetaL, thetaH, eps=1e-5, time_limit=1.0):
 
     S = (p * deltaTheta) / (1 - p) + thetaH
 
-    m.addConstr(VqHc >= S * qHc)
+    m.addConstr(VqHc >= S)
     m.addConstr(VqHStar - VqHc <= S * qHc * (qHStar - qHc))
     m.addConstr(VqHStar - VqHc >= thetaH * (qHStar - qHc))
     m.addConstr(VqLStar - VqHStar <= thetaH * (qLStar - qHStar))

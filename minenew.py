@@ -106,23 +106,24 @@ def search():
         best_obj = float("inf")
         best = None
 
-        for p in p_vals:
-            for thetaH in thetaH_vals:
-                for ratio in ratio_vals:
+        p=0.01
+        #for p in p_vals:
+        for thetaH in thetaH_vals:
+            for ratio in ratio_vals:
 
-                    thetaL = ratio * thetaH
+                thetaL = ratio * thetaH
 
-                    if thetaL >= thetaH:
-                        continue
+                if thetaL >= thetaH:
+                    continue
 
-                    result = solve_model(p, thetaL, thetaH)
+                result = solve_model(p, thetaL, thetaH)
 
-                    if result is None:
-                        continue
+                if result is None:
+                    continue
 
-                    if result["objective_z"] < best_obj:
-                        best_obj = result["objective_z"]
-                        best = result
+                if result["objective_z"] < best_obj:
+                    best_obj = result["objective_z"]
+                    best = result
         
         print("\nBest so far:")
         for k, v in best.items():
